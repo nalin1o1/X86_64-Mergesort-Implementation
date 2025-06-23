@@ -1,0 +1,100 @@
+#for Executing and Debugging :
+
+to Assemble :
+nasm -f elf64 file.asm -o file.o
+
+to Link:
+
+ld -o file file.o
+
+To run using gdb:
+gdb ./file
+
+When in gdb to see the code side by side use : layout asm 
+Then insert a break at _start : break _start 
+then use "run" to start execution 
+nexti to step through each instruction one by one.
+
+Data Types :
+
+dq - Double quadword - 8bytes
+db - byte - 1byte 
+
+
+#stack info:
+
+stack always grows downwards
+the stack alignment in x86_64 is 16 bytes
+the stack space allocated should always be a multiple of 16
+
+Safe Register Usage:
+
+
+
+# For Syscalls:
+
+; Correct sys_write
+mov rax, 1       ; syscall number
+mov rdi, 1       ; fd (stdout)
+mov rsi, msg     ; buffer
+mov rdx, len     ; length
+syscall
+
+#for exiting
+mov rax,60
+mov rdi,1
+syscall
+
+x86_64 Strictly Defines : 
+
+#Argument Passing:
+rdi - 1st Argument 
+rsi - ....
+rdx - ....
+r10 - ....
+r8
+r9 - 6th Argument
+
+rax - Return Value, rdx for 128 bit returns
+
+use ret for returning to the calling function
+
+#clear rdx before carrying out division.
+#Division Working Mechanism : 
+
+mov rax, 100 # the Dividend is always stored in rax for x86_64
+xor rdx, rdx # rdx stores the Remainder, xor rdx converts rdx to 0000... it clears the register 
+mov rbx, Divisor #Store the Divisor in any General Purpose Register.
+div %rax
+# The Quotient is stored in rax and the remainder is stored in rdx.
+If you need only the quotient its faster to shift right than to use div. Its also faster to use shr than div when dividing by 2.
+For General arithmetic you can use any register. all of them work as general purpose
+
+Difference between register and [register]:
+
+register - value stored in the register. ex : mov val,register -> val stores the value stored inside the register. if the register stores 0x234 val has the value 0x234 now 
+[register] - value stored at the address inside the register. ex : mov val, [register] -> if register holds 0x234 the "val" stores the value at the memory location 0x234
+
+Difference between lea and mov:
+
+lea requires the source operand to be within []. ex: lea rax,[rbx + 4]
+lea can be used to calulate offsets and perform additions in a single instruction without using the add instruction 
+ex : lea rax, [rbx+4+3*rbx] - if rbx stores 0x1909 the expression evaluates 0x1909 + 4 and not the values stored at 0x1909.
+ - can perform entire expressions in a single instruction!! . also useful if you want to calculate address
+offsets. ex : in the previous example you can store an address inside rax and add 4 to rbx which stores an address.
+
+Labels are section specific
+
+
+GDB TIPS:
+
+sudo perf report --disassemble-style=intel #displays the code in nasm style instead of AT&T
+To compile Coremark using no optimization (for analyzing Disassembly): make XCFLAGS="-O0 -g" REBUILD=1
+disas - Disassembles around the crash point 
+p/x $register_name - checks the value of the register before it crashed
+x/wd *memory location* - view a word inside a memory location
+x/db *memory location* - view a *define byte* inside a memory location
+info registers - Register info
+info proc mappings - check memory mappings
+
+
